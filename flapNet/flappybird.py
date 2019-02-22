@@ -14,15 +14,14 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 import keyboard as kb
 
 model = Sequential()
-model.add(Dense(4, activation='relu', input_shape=(3,)))
-model.add(Dense(4, activation='relu', input_shape=(4,)))
-model.add(Dense(1, activation='sigmoid', input_shape=(4,)))
+model.add(Dense(8, activation='relu', input_shape=(3,)))
+model.add(Dense(1, activation='sigmoid', input_shape=(8,)))
 
 model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
-model.load_weights('flapNetWeights.h5')
+#model.load_weights('flapNetWeights.h5')
 
-if False: # set to true if training
+if True: # set to true if training
     
     allData = np.loadtxt("data.txt", delimiter=',')
 
@@ -31,7 +30,7 @@ if False: # set to true if training
     
     history = model.fit(allData[:,[0,1,2]], allData[:,3],                                       #used to train model
                             batch_size=32,
-                            epochs=250,
+                            epochs=3000,
                             verbose=1,
                             validation_data=((testData[:,[0,1,2]], testData[:,3])))
     model.save_weights("flapNetWeights.h5")   
