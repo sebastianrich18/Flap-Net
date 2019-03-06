@@ -12,5 +12,10 @@ for i in range(int(arr.shape[0]*.94)):
         arr = np.delete(arr,index,0)
         count += 1
         
+while arr.shape[0] % 10 != 0:
+    arr=np.delete(arr,1,axis=0)
+    print('removed an item to make splitting even')
+    
+    
 print('deleted ',count,'items')
 np.savetxt('data.txt', arr, fmt='%1.3f', delimiter=',')

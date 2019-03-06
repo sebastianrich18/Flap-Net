@@ -1,4 +1,4 @@
-# Game code from https://github.com/TimoWilken/flappy-bird-pygame
+# modified game code from https://github.com/TimoWilken/flappy-bird-pygame
 
 import os
 from random import randint
@@ -7,11 +7,22 @@ import pygame
 from pygame.locals import *
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import RMSprop
 import numpy as np
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 import keyboard as kb
+
+
+
+
+AI = True # true if you want ai to play the game, false to disable ai
+train = False # true if you want to train the NN, false if you do not want to train
+game = True # true if you want the game to run, false if you dont want the game to run
+collectData = '' # 'user' to write to data.txt from user, 'ai' if you want to write data from ai, '' or None if you do not want to write data
+
+
+
 
 model = Sequential()
 model.add(Dense(8, activation='relu', input_shape=(3,)))
@@ -19,33 +30,40 @@ model.add(Dense(1, activation='sigmoid', input_shape=(8,)))
 
 model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
-#model.load_weights('flapNetWeights.h5')
+model.load_weights('flapNetWeights.h5') # comment out if you do not want to load weights ---------------------------------------------------------------------------------------------
 
-if True: # set to true if training
+if train:
     
     allData = np.loadtxt("data.txt", delimiter=',')
 
-    tempData = np.split(allData, 2)
-    testData = np.asarray(tempData)[0] # test data is 1/4 of all data
+    tempData = np.split(allData, 10)
+    testData = tempData[0]
+    testData = np.append(testData, tempData[1], axis=0)  # these lines split the data into 70% train data and 30% test data
+    testData = np.append(testData, tempData[2], axis=0)
+    trainData = tempData[3]
+    for i in range(6):
+        trainData = np.append(trainData, tempData[i+4], axis=0)
+        
     
-    history = model.fit(allData[:,[0,1,2]], allData[:,3],                                       #used to train model
+    
+    history = model.fit(trainData[:,[0,1,2]], trainData[:,3],                                       #used to train model
                             batch_size=32,
-                            epochs=3000,
+                            epochs=10000, # change this to train longer
                             verbose=1,
                             validation_data=((testData[:,[0,1,2]], testData[:,3])))
-    model.save_weights("flapNetWeights.h5")   
+                            
+    model.save_weights("flapNetWeights.h5")   # comment out if you do not want to save weights **will replace old weights file**
 
 
 
-if True: # set to True if you want the game to run
+if game: # set to True if you want the game to run
              
     FPS = 60
     ANIMATION_SPEED = 0.18  # pixels per millisecond
     WIN_WIDTH = 284 * 2     # BG image size: 284x512 px; tiled twice
     WIN_HEIGHT = 512
     loopCount = 0.
-    AI = True
-    
+        
     class Bird(pygame.sprite.Sprite):
         WIDTH = HEIGHT = 32
         SINK_SPEED = 0.25
@@ -257,13 +275,16 @@ if True: # set to True if you want the game to run
                 inpu = inpu.reshape(1,3)
         
                 flap = model.predict(inpu)
-                
+                flap = round(flap[0,0],3)
                 print("%s\tperdicted: %s\n" % (inpu[0:1],flap))
-            loopCount += 1
-    
-            if flap >= .5:
-                return True
-    
+                
+                if flap >= .5:
+                    return True
+                else:
+                    return False
+                    
+                loopCount += 1
+                
         while not done:
             clock.tick(FPS)
             # Handle this 'manually'.  If we used pygame.time.set_timer(),
@@ -274,14 +295,23 @@ if True: # set to True if you want the game to run
     
             p = pipes[0]
             
-            #writeData(round(float(p.getXdist()),7), round(p.getTopBottomY() - bird.getY(),7), bird.getyVel(), checkFlap()) #------------------------------------write training data-----------------------------------------------------------
-            
+            flapped = ''
             if AI:
                 if getFlap(p.getXdist(), p.getTopBottomY() - bird.getY(), bird.getyVel()):
                    bird.yVel = -8
-             
-            checkFlap()
-    
+                   flapped='1'
+                   print('flapped--------------')
+                else:
+                    flapped='0'
+                
+                if collectData == 'ai':
+                    writeData(round(float(p.getXdist()),7), round(p.getTopBottomY() - bird.getY(),7), bird.getyVel(), flapped)
+                   
+            if collectData == 'user':
+                writeData(round(float(p.getXdist()),7), round(p.getTopBottomY() - bird.getY(),7), bird.getyVel(), checkFlap())
+                
+            checkFlap() # checks if user pressed space, then maked bird flap
+            
             if paused:
                 continue  # don't draw anything
     
