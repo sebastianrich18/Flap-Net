@@ -276,9 +276,9 @@ if game: # set to True if you want the game to run
         
                 flap = model.predict(inpu)
                 flap = round(flap[0,0],3)
-                print("%s\tperdicted: %s\n" % (inpu[0:1],flap))
                 
                 if flap >= .5:
+                    print("%s\tperdicted: %s\n" % (inpu[0:1],flap))
                     return True
                 else:
                     return False
@@ -300,7 +300,6 @@ if game: # set to True if you want the game to run
                 if getFlap(p.getXdist(), p.getTopBottomY() - bird.getY(), bird.getyVel()):
                    bird.yVel = -8
                    flapped='1'
-                   print('flapped--------------')
                 else:
                     flapped='0'
                 
